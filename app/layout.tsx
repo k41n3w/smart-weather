@@ -8,7 +8,7 @@ import { AuthProvider } from "@/lib/auth-client"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Weather App - Recomendações Personalizadas",
+  title: "Smart Weather - Recomendações Personalizadas",
   description: "Receba recomendações personalizadas com base no clima e no seu perfil",
     generator: 'v0.dev'
 }

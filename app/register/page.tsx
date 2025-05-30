@@ -8,7 +8,7 @@ import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Bike, Car, Leaf, Umbrella, Book, ArrowLeft } from "lucide-react"
+import { Bike, Car, Leaf, Umbrella, Book, ArrowLeft, Eye, EyeOff, RefreshCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -42,6 +42,12 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const supabase = getSupabaseClient()
+  const [showPassword, setShowPassword] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number
+    feedback: string[]
+    color: string
+  }>({ score: 0, feedback: [], color: "gray" })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,12 +60,106 @@ export default function RegisterPage() {
     },
   })
 
+  const evaluatePasswordStrength = (password: string) => {
+    const feedback: string[] = []
+    let score = 0
+
+    if (password.length >= 8) {
+      score += 1
+    } else {
+      feedback.push("Use pelo menos 8 caracteres")
+    }
+
+    if (/[a-z]/.test(password)) {
+      score += 1
+    } else {
+      feedback.push("Inclua letras minúsculas")
+    }
+
+    if (/[A-Z]/.test(password)) {
+      score += 1
+    } else {
+      feedback.push("Inclua letras maiúsculas")
+    }
+
+    if (/\d/.test(password)) {
+      score += 1
+    } else {
+      feedback.push("Inclua números")
+    }
+
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      score += 1
+    } else {
+      feedback.push("Inclua símbolos (!@#$%^&*)")
+    }
+
+    let color = "red"
+    if (score >= 4) color = "green"
+    else if (score >= 3) color = "yellow"
+    else if (score >= 2) color = "orange"
+
+    return { score, feedback, color }
+  }
+
+  const generateSecurePassword = () => {
+    const lowercase = "abcdefghijklmnopqrstuvwxyz"
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    const numbers = "0123456789"
+    const symbols = "!@#$%^&*"
+
+    let password = ""
+
+    // Garantir pelo menos um de cada tipo
+    password += lowercase[Math.floor(Math.random() * lowercase.length)]
+    password += uppercase[Math.floor(Math.random() * uppercase.length)]
+    password += numbers[Math.floor(Math.random() * numbers.length)]
+    password += symbols[Math.floor(Math.random() * symbols.length)]
+
+    // Completar com caracteres aleatórios
+    const allChars = lowercase + uppercase + numbers + symbols
+    for (let i = 4; i < 12; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)]
+    }
+
+    // Embaralhar a senha
+    return password
+      .split("")
+      .sort(() => Math.random() - 0.5)
+      .join("")
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
     setDebugInfo(null)
 
     try {
       console.log("Iniciando registro com:", { email: values.email, cidade: values.city, perfil: values.profile })
+
+      // Verificar cooldown de registro
+      const lastAttemptTime = localStorage.getItem(`register_attempt_${values.email}`)
+      const cooldownPeriod = 60 * 1000 // 60 segundos em milissegundos
+
+      if (lastAttemptTime) {
+        const timeSinceLastAttempt = Date.now() - Number.parseInt(lastAttemptTime)
+        if (timeSinceLastAttempt < cooldownPeriod) {
+          const remainingSeconds = Math.ceil((cooldownPeriod - timeSinceLastAttempt) / 1000)
+          toast({
+            title: "Aguarde um momento",
+            description: `Por favor, aguarde ${remainingSeconds} segundos antes de tentar novamente.`,
+            variant: "warning",
+          })
+          setIsLoading(false)
+          return
+        }
+      }
+
+      // Substituir o bloco de verificação de usuário existente (que usa signInWithOtp) por este:
+
+      // Verificar se o usuário já existe - vamos pular esta verificação prévia
+      // e deixar o Supabase lidar com isso durante o signUp
+      console.log("Registrando tentativa de registro no localStorage")
+      localStorage.setItem(`register_attempt_${values.email}`, Date.now().toString())
 
       // 1. Criar o usuário no auth do Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -71,12 +171,35 @@ export default function RegisterPage() {
             city: values.city,
             profile_type: values.profile,
           },
+          emailRedirectTo: `${window.location.origin}/?showEmailConfirmation=true&email=${encodeURIComponent(values.email)}`,
         },
       })
 
       if (authError) {
         console.error("Erro na autenticação:", authError)
         setDebugInfo(JSON.stringify(authError, null, 2))
+
+        // Verificar se o erro é porque o usuário já existe
+        if (authError.message?.includes("already registered")) {
+          toast({
+            title: "Email já registrado",
+            description: "Este email já está registrado. Por favor, tente fazer login ou recuperar sua senha.",
+            variant: "warning",
+          })
+          return
+        }
+
+        // Tratar especificamente o erro de limite de taxa de envio de email
+        if (authError.status === 429 && authError.code === "over_email_send_rate_limit") {
+          toast({
+            title: "Limite de envio de emails atingido",
+            description:
+              "Muitos emails foram enviados para este endereço recentemente. Por favor, aguarde alguns minutos antes de tentar novamente ou verifique sua caixa de entrada por emails anteriores.",
+            variant: "destructive",
+          })
+          return
+        }
+
         throw authError
       }
 
@@ -211,8 +334,99 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input placeholder="******" type="password" {...field} />
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Input
+                            placeholder="******"
+                            type={showPassword ? "text" : "password"}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e)
+                              setPasswordStrength(evaluatePasswordStrength(e.target.value))
+                            }}
+                            className="pr-20"
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => {
+                                const newPassword = generateSecurePassword()
+                                field.onChange(newPassword)
+                                setPasswordStrength(evaluatePasswordStrength(newPassword))
+                              }}
+                              title="Gerar senha segura"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {field.value && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    passwordStrength.color === "red"
+                                      ? "bg-red-500 w-1/5"
+                                      : passwordStrength.color === "orange"
+                                        ? "bg-orange-500 w-2/5"
+                                        : passwordStrength.color === "yellow"
+                                          ? "bg-yellow-500 w-3/5"
+                                          : "bg-green-500 w-full"
+                                  }`}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-medium ${
+                                  passwordStrength.color === "red"
+                                    ? "text-red-600"
+                                    : passwordStrength.color === "orange"
+                                      ? "text-orange-600"
+                                      : passwordStrength.color === "yellow"
+                                        ? "text-yellow-600"
+                                        : "text-green-600"
+                                }`}
+                              >
+                                {passwordStrength.score <= 2
+                                  ? "Fraca"
+                                  : passwordStrength.score === 3
+                                    ? "Média"
+                                    : passwordStrength.score === 4
+                                      ? "Boa"
+                                      : "Forte"}
+                              </span>
+                            </div>
+
+                            {passwordStrength.feedback.length > 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                <p className="font-medium mb-1">Para uma senha mais segura:</p>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {passwordStrength.feedback.map((tip, index) => (
+                                    <li key={index}>{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
+                    <FormDescription>
+                      Use uma senha forte com pelo menos 8 caracteres, incluindo letras, números e símbolos.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -311,6 +525,22 @@ export default function RegisterPage() {
               <pre className="text-xs overflow-auto max-h-40">{debugInfo}</pre>
             </div>
           )}
+
+          {/* Adicione este componente de aviso para usuários que já possuem conta */}
+          <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md">
+            <h3 className="font-medium mb-2 text-yellow-800 dark:text-yellow-400">Já possui uma conta?</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
+              Se você já se registrou anteriormente, verifique seu email para o link de confirmação ou tente fazer
+              login.
+            </p>
+            <div className="flex justify-end">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Ir para o login
+                </Button>
+              </Link>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

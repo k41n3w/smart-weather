@@ -224,7 +224,7 @@ export default function ExamplePage() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold">ClimaTempo</span>
+            <span className="text-xl font-bold">Smart Weather</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/register">
