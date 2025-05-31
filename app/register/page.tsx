@@ -59,8 +59,6 @@ export default function RegisterPage() {
     setDebugInfo(null)
 
     try {
-      console.log("Iniciando registro com:", { email: values.email, cidade: values.city, perfil: values.profile })
-
       // 1. Criar o usuário no auth do Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
@@ -75,12 +73,9 @@ export default function RegisterPage() {
       })
 
       if (authError) {
-        console.error("Erro na autenticação:", authError)
         setDebugInfo(JSON.stringify(authError, null, 2))
         throw authError
       }
-
-      console.log("Usuário criado com sucesso:", authData)
 
       if (!authData.user) {
         throw new Error("Usuário não foi criado corretamente")
@@ -108,15 +103,12 @@ export default function RegisterPage() {
         const responseData = await response.json()
 
         if (!response.ok) {
-          console.error("Erro ao criar perfil:", responseData)
           setDebugInfo((prev) => (prev || "") + "\n\nErro API: " + JSON.stringify(responseData, null, 2))
           // Não interromper o fluxo se o perfil falhar
         } else {
-          console.log("Perfil criado com sucesso:", responseData)
           setDebugInfo((prev) => (prev || "") + "\n\nResposta API: " + JSON.stringify(responseData, null, 2))
         }
       } catch (error) {
-        console.error("Erro ao criar perfil:", error)
         setDebugInfo((prev) => (prev || "") + "\n\nErro API: " + JSON.stringify(error, null, 2))
         // Não interromper o fluxo se o perfil falhar
       }
@@ -131,8 +123,6 @@ export default function RegisterPage() {
       // Usar window.location.href para garantir um redirecionamento completo
       window.location.href = `/?showEmailConfirmation=true&email=${encodeURIComponent(values.email)}`
     } catch (error: any) {
-      console.error("Erro ao registrar:", error)
-
       // Tentar extrair uma mensagem de erro mais útil
       let errorMessage = "Ocorreu um erro ao criar sua conta. Por favor, tente novamente."
 
@@ -160,162 +150,164 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="container max-w-md py-12">
-      <Link href="/" className="inline-flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" />
-        <span>Voltar para a página inicial</span>
-      </Link>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Link href="/" className="inline-flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Voltar para a página inicial</span>
+        </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Criar conta</CardTitle>
-          <CardDescription>
-            Preencha os dados abaixo para criar sua conta e receber previsões personalizadas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Seu nome completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Criar conta</CardTitle>
+            <CardDescription>
+              Preencha os dados abaixo para criar sua conta e receber previsões personalizadas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Seu nome completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu@email.com" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input placeholder="******" type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input placeholder="******" type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Sao Paulo, Caconde, Rio de Janeiro" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Usaremos esta informação para mostrar a previsão do tempo local. É importante que você escreva
-                      somente o nome da cidade sem acentos!
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sao Paulo, Caconde, Rio de Janeiro" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Usaremos esta informação para mostrar a previsão do tempo local. É importante que você escreva
+                        somente o nome da cidade sem acentos!
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="profile"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Perfil de usuário</FormLabel>
-                    <FormDescription>Selecione o perfil que melhor se adapta às suas necessidades.</FormDescription>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="grid grid-cols-1 gap-4"
-                      >
-                        <ProfileOption
-                          value="athlete"
-                          label="Atleta"
-                          description="Recomendações para treinos e atividades ao ar livre"
-                          icon={<Bike className="h-5 w-5" />}
-                          checked={field.value === "athlete"}
-                        />
+                <FormField
+                  control={form.control}
+                  name="profile"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Perfil de usuário</FormLabel>
+                      <FormDescription>Selecione o perfil que melhor se adapta às suas necessidades.</FormDescription>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-1 gap-4"
+                        >
+                          <ProfileOption
+                            value="athlete"
+                            label="Atleta"
+                            description="Recomendações para treinos e atividades ao ar livre"
+                            icon={<Bike className="h-5 w-5" />}
+                            checked={field.value === "athlete"}
+                          />
 
-                        <ProfileOption
-                          value="driver"
-                          label="Motorista"
-                          description="Informações sobre condições das estradas"
-                          icon={<Car className="h-5 w-5" />}
-                          checked={field.value === "driver"}
-                        />
+                          <ProfileOption
+                            value="driver"
+                            label="Motorista"
+                            description="Informações sobre condições das estradas"
+                            icon={<Car className="h-5 w-5" />}
+                            checked={field.value === "driver"}
+                          />
 
-                        <ProfileOption
-                          value="farmer"
-                          label="Agricultor"
-                          description="Insights para atividades agrícolas"
-                          icon={<Leaf className="h-5 w-5" />}
-                          checked={field.value === "farmer"}
-                        />
+                          <ProfileOption
+                            value="farmer"
+                            label="Agricultor"
+                            description="Insights para atividades agrícolas"
+                            icon={<Leaf className="h-5 w-5" />}
+                            checked={field.value === "farmer"}
+                          />
 
-                        <ProfileOption
-                          value="tourist"
-                          label="Turista"
-                          description="Sugestões de atividades baseadas no clima"
-                          icon={<Umbrella className="h-5 w-5" />}
-                          checked={field.value === "tourist"}
-                        />
+                          <ProfileOption
+                            value="tourist"
+                            label="Turista"
+                            description="Sugestões de atividades baseadas no clima"
+                            icon={<Umbrella className="h-5 w-5" />}
+                            checked={field.value === "tourist"}
+                          />
 
-                        <ProfileOption
-                          value="student"
-                          label="Estudante"
-                          description="Planejamento de atividades acadêmicas"
-                          icon={<Book className="h-5 w-5" />}
-                          checked={field.value === "student"}
-                        />
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                          <ProfileOption
+                            value="student"
+                            label="Estudante"
+                            description="Planejamento de atividades acadêmicas"
+                            icon={<Book className="h-5 w-5" />}
+                            checked={field.value === "student"}
+                          />
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Criando conta..." : "Criar conta"}
-              </Button>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Criando conta..." : "Criar conta"}
+                </Button>
 
-              <div className="text-center text-sm text-muted-foreground">
-                Já tem uma conta?{" "}
-                <Link href="/login" className="text-primary hover:underline">
-                  Entrar
-                </Link>
+                <div className="text-center text-sm text-muted-foreground">
+                  Já tem uma conta?{" "}
+                  <Link href="/login" className="text-primary hover:underline">
+                    Entrar
+                  </Link>
+                </div>
+              </form>
+            </Form>
+
+            {debugInfo && (
+              <div className="mt-6 p-4 bg-muted rounded-md">
+                <h3 className="font-medium mb-2">Informações de depuração:</h3>
+                <pre className="text-xs overflow-auto max-h-40">{debugInfo}</pre>
               </div>
-            </form>
-          </Form>
-
-          {debugInfo && (
-            <div className="mt-6 p-4 bg-muted rounded-md">
-              <h3 className="font-medium mb-2">Informações de depuração:</h3>
-              <pre className="text-xs overflow-auto max-h-40">{debugInfo}</pre>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
