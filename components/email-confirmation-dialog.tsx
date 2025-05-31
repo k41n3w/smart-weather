@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Mail, CheckCircle } from "lucide-react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export function EmailConfirmationDialog() {
   const [open, setOpen] = useState(false)
@@ -31,53 +30,6 @@ export function EmailConfirmationDialog() {
     url.searchParams.delete("showEmailConfirmation")
     url.searchParams.delete("email")
     window.history.replaceState({}, "", url.pathname)
-  }
-
-  // Adicione esta função dentro do componente EmailConfirmationDialog, antes do return
-  const handleResendEmail = async () => {
-    if (!email) return
-
-    // Verificar cooldown de reenvio
-    const lastResendTime = localStorage.getItem(`email_resend_${email}`)
-    const cooldownPeriod = 60 * 1000 // 60 segundos
-
-    if (lastResendTime) {
-      const timeSinceLastResend = Date.now() - Number.parseInt(lastResendTime)
-      if (timeSinceLastResend < cooldownPeriod) {
-        const remainingSeconds = Math.ceil((cooldownPeriod - timeSinceLastResend) / 1000)
-        alert(`Por favor, aguarde ${remainingSeconds} segundos antes de solicitar outro email.`)
-        return
-      }
-    }
-
-    try {
-      const supabase = createClientComponentClient()
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/?showEmailConfirmation=true&email=${encodeURIComponent(email)}`,
-        },
-      })
-
-      if (error) {
-        if (error.status === 429) {
-          alert(
-            "Muitos emails foram enviados recentemente. Por favor, aguarde alguns minutos antes de tentar novamente.",
-          )
-        } else {
-          alert(`Erro ao reenviar email: ${error.message}`)
-        }
-        return
-      }
-
-      // Registrar tentativa de reenvio
-      localStorage.setItem(`email_resend_${email}`, Date.now().toString())
-      alert("Email de confirmação reenviado com sucesso!")
-    } catch (err) {
-      alert("Ocorreu um erro ao tentar reenviar o email de confirmação.")
-      console.error(err)
-    }
   }
 
   return (
@@ -118,26 +70,6 @@ export function EmailConfirmationDialog() {
                     <li>Receber recomendações baseadas no clima</li>
                   </ul>
                 </div>
-              </div>
-            </div>
-
-            {/* Adicione esta seção com instruções adicionais */}
-            <div className="mt-4 rounded-md bg-yellow-50 dark:bg-yellow-900/20 p-3">
-              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">Não recebeu o email?</p>
-              <ul className="mt-1 list-inside space-y-1 text-sm text-yellow-700 dark:text-yellow-300">
-                <li>Verifique sua pasta de spam ou lixo eletrônico</li>
-                <li>Aguarde alguns minutos, o email pode demorar para chegar</li>
-                <li>Verifique se o endereço de email está correto</li>
-              </ul>
-              <div className="mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-800"
-                  onClick={handleResendEmail}
-                >
-                  Reenviar email de confirmação
-                </Button>
               </div>
             </div>
           </div>

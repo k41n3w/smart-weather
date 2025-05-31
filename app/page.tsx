@@ -16,7 +16,7 @@ export default function LandingPage() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold">Smart Weather</span>
+            <span className="text-xl font-bold">ClimaTempo</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login">
@@ -279,7 +279,7 @@ export default function LandingPage() {
         <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="flex flex-col gap-2">
-              <h3 className="text-lg font-semibold">Smart Weather</h3>
+              <h3 className="text-lg font-semibold">ClimaTempo</h3>
               <p className="text-sm text-muted-foreground">
                 Previsão do tempo personalizada para diferentes perfis de usuários.
               </p>
@@ -307,11 +307,11 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col gap-2">
               <h3 className="text-lg font-semibold">Contato</h3>
-              <p className="text-sm text-muted-foreground">contato@smartweather.com</p>
+              <p className="text-sm text-muted-foreground">contato@climatempo.com</p>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Smart Weather. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} ClimaTempo. Todos os direitos reservados.
           </div>
         </div>
       </footer>
